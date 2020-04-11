@@ -1,0 +1,22 @@
+{
+  "name": "ecs193a-b-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/j-a-smith/ECS193A-B-Server.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/j-a-smith/ECS193A-B-Server/issues"
+  },
+  "homepage": "https://github.com/j-a-smith/ECS193A-B-Server#readme",
+  "dependencies": {
+    "sqlite3": "^4.1.1"
+  }
+}
