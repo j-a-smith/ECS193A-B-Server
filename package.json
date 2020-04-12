@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/j-a-smith/ECS193A-B-Server#readme",
   "dependencies": {
+    "express": "^4.17.1",
     "sqlite3": "^4.1.1"
   }
 }
