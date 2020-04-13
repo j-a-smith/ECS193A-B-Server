@@ -88,15 +88,21 @@ app.get('/join/:gameId/:uname', (req, res) => {
 	})
 })
 
-// app.get('/host-check/:gameId', (req, res) => {
-// 	const gameId = req.params.gameId
-// 	DB.get(`SELECT * FROM Users WHERE id = :0`, gameId, (err, row) => {
-// 		if (err) {
-// 			res.send("SELECT failed")
-// 			console.log(err)
-// 		}
-// 		else
-// 			res.send(row)
-// 	})
-// })
+app.get('/host-check/:gameId', (req, res) => {
+	const gameId = req.params.gameId
+	DB.get(`SELECT * FROM GameSessions WHERE id = :0`, gameId, (err, row) => {
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		if (row) {
+			const usernames = [row.player1_username, row.player2_username, row.player3_username, row.player4_username]
+			res.send({usernames})
+		}
+		else
+			res.send({err: "Game session does not exist"})
+			
+	})
+})
 
