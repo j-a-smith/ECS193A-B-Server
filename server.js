@@ -2,8 +2,8 @@ const express = require('express')
 const sqlite3 = require('sqlite3').verbose()
 
 const app = express()
-const port = 3000
-
+const port = 59435
+const hostName = 'server162.site'
 const DB_PATH = './sqlite.db'
 const dbSchema = `
 CREATE TABLE IF NOT EXISTS GameSessions (
@@ -29,7 +29,7 @@ const DB = new sqlite3.Database(DB_PATH, function(err) {
 	});
 });
 
-app.listen(port, () => console.log(`Listening at http://localhost:${port}`))
+app.listen(port, hostName, () => console.log(`Listening at http://${hostName}:${port}`))
 
 app.get('/', (req, res) => res.send('Welcome to the game server for None to Mourn!'))
 
