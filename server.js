@@ -61,11 +61,12 @@ app.get('/join/:gameId/:uname', (req, res) => {
 		}
 
 		if (row) {
-			const playerSlots = [row.player1_username, row.player2_username, row.player3_username, row.player4_username]
+			const playerSlots = [row.player2_username, row.player3_username, row.player4_username]
 			let playerColumn = null
+
 			for (let i = 0; i < playerSlots.length; i++) {
 				if (playerSlots[i] == null) {
-					playerColumn = `player${i}_username`
+					playerColumn = `player${i + 2}_username`
 					break
 				}
 			}
@@ -75,7 +76,7 @@ app.get('/join/:gameId/:uname', (req, res) => {
 				return
 			}
 
-			DB.run(`INSERT INTO GameSessions (${playerColumn}) VALUES (:0) WHERE ID = :1;`, uname, gameId, (err) => {
+			DB.run(`UPDATE GameSessions SET ${playerColumn} = :0 WHERE ID = :1;`, uname, gameId, (err) => {
 				if (err) {
 					res.send({err, didConnect: false})
 					return
@@ -87,15 +88,21 @@ app.get('/join/:gameId/:uname', (req, res) => {
 	})
 })
 
-// app.get('/host-check/:gameId', (req, res) => {
-// 	const gameId = req.params.gameId
-// 	DB.get(`SELECT * FROM Users WHERE id = :0`, gameId, (err, row) => {
-// 		if (err) {
-// 			res.send("SELECT failed")
-// 			console.log(err)
-// 		}
-// 		else
-// 			res.send(row)
-// 	})
-// })
+app.get('/host-check/:gameId', (req, res) => {
+	const gameId = req.params.gameId
+	DB.get(`SELECT * FROM GameSessions WHERE id = :0`, gameId, (err, row) => {
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		if (row) {
+			const usernames = [row.player1_username, row.player2_username, row.player3_username, row.player4_username]
+			res.send({usernames})
+		}
+		else
+			res.send({err: "Game session does not exist"})
+			
+	})
+})
 
