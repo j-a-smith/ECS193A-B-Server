@@ -125,8 +125,12 @@ app.get('/host-check/:gameId', (req, res) => {
 		}
 
 		if (row) {
-			const usernames = [row.player1_username, row.player2_username, row.player3_username, row.player4_username]
-			res.send({usernames})
+			res.send({
+				player1: row.player1_username,
+				player2: row.player2_username,
+				player3: row.player3_username,
+				player4: row.player4_username
+			})
 		}
 		else
 			res.send({err: "Game session does not exist"})
