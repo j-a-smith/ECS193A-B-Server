@@ -149,11 +149,29 @@ app.get('/host-check/:gameId', (req, res) => {
 	})
 })
 
+// Alerts server that specific game session should move to base placement.
+// Params:
+// 		:gameId - ID of the game session 
+// 		:uname  - Username of the player making request
+app.get('/start-game/:gameId/:uname', (req, res) => {
+	const { gameId, uname } = req.params
+
+	DB.run(`UPDATE GameSessions SET game_state = 1 WHERE id = :0 AND player1_username = :1;`, gameId, uname, (err) => {
+		if (err) {
+			res.send("Error: game session or player not found")
+			return
+		}
+
+		res.send("Success")
+	})
+})
+
+
 // Alerts server that a specific user has placed their base
 // Params:
 //		:gameId - ID of game session to check
 //		:uname  - Player's username
-app.get('/base-placed/:gameId/:uname', (req, res) => {
+app.get('/place-base/:gameId/:uname', (req, res) => {
 	const { gameId, uname } = req.params
 	let playerColumn = null
 
@@ -186,7 +204,7 @@ app.get('/base-placed/:gameId/:uname', (req, res) => {
 			return
 		}
 
-		var gameStateNum = (numBasesPlaced == 4) ? 1 : 0
+		var gameStateNum = (numBasesPlaced == 4) ? 2 : 1
 
 		DB.run(`UPDATE GameSessions SET player${playerColumn}_didPlaceBase = 1, game_state = :0 WHERE id = :1;`, gameStateNum, gameId, (err) => {
 			if (err) 
