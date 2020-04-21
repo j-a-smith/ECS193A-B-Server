@@ -2,16 +2,26 @@ const express = require('express')
 const sqlite3 = require('sqlite3').verbose()
 
 const app = express()
-const port = 59435
-const hostName = 'server162.site'
+// const port = 59435
+// const hostName = 'server162.site'
+const port = 3000
+const hostName = 'localhost'
+
+const GAME_STATES = ['init', 'bases', 'game', 'end']
+
 const DB_PATH = './sqlite.db'
 const dbSchema = `
 CREATE TABLE IF NOT EXISTS GameSessions (
 	id integer PRIMARY KEY NOT NULL,
+	game_state integer NOT NULL,
 	player1_username text NOT NULL,
 	player2_username text,
 	player3_username text,
 	player4_username text,
+	player1_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
+	player2_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
+	player3_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
+	player4_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
 	is_active integer NOT NULL CHECK(is_active IN(0, 1))
 );`
 
@@ -52,7 +62,9 @@ app.get('/host-request/:uname', (req, res) => {
 			return
 		}
 
-		DB.run(`INSERT INTO GameSessions (player1_username, is_active) VALUES (:0, :1);`, uname, 1, (err) => {
+		DB.run(`INSERT INTO GameSessions (player1_username, game_state, is_active, player1_didPlaceBase,
+				player2_didPlaceBase, player3_didPlaceBase, player4_didPlaceBase) VALUES (:0, :1, :2, :3, :4, :5, :6);`, 
+				uname, 0, 1, 0, 0, 0, 0, (err) => {
 			if (err) {
 				res.send({err})
 				return
@@ -136,4 +148,75 @@ app.get('/host-check/:gameId', (req, res) => {
 			res.send({err: "Game session does not exist"})
 	})
 })
+
+// Alerts server that a specific user has placed their base
+// Params:
+//		:gameId - ID of game session to check
+//		:uname  - Player's username
+app.get('/base-placed/:gameId/:uname', (req, res) => {
+	const { gameId, uname } = req.params
+	let playerColumn = null
+
+	DB.get(`SELECT * FROM GameSessions WHERE id = :0`, gameId, (err, row) => {
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		var numBasesPlaced = 1
+
+		if (row) {
+			const playerSlots = [row.player1_username, row.player2_username, row.player3_username, row.player4_username]
+			const didPlayersSetBase = [row.player1_didPlaceBase, row.player2_didPlaceBase, row.player3_didPlaceBase, row.player4_didPlaceBase]
+			
+			for (let i = 0; i < playerSlots.length; i++) {
+				if (playerSlots[i] == uname) 
+					playerColumn = i + 1
+				else
+					numBasesPlaced += didPlayersSetBase[i]
+			}
+
+			if (playerColumn == null) {
+				res.send({err: "Player not found"})
+				return
+			}
+		}
+		else {
+			res.send({err: "Game session not found"})
+			return
+		}
+
+		var gameStateNum = (numBasesPlaced == 4) ? 1 : 0
+
+		DB.run(`UPDATE GameSessions SET player${playerColumn}_didPlaceBase = 1, game_state = :0 WHERE id = :1;`, gameStateNum, gameId, (err) => {
+			if (err) 
+				res.send({err})
+			else
+				res.send("Success")
+		})
+	})
+})
+
+// Reports game state of specific game session
+// Params:
+//		:gameId - ID of game session to check
+// Returns:
+//		gameState - string denoting game state
+app.get('/game-state-check/:gameId', (req, res) => {
+	const gameId = req.params.gameId
+	DB.get(`SELECT * FROM GameSessions WHERE id = :0`, gameId, (err, row) => {
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		if (row) {
+			const gameState = GAME_STATES[row.game_state]
+			res.send({gameState})
+		}
+		else
+			res.send({err: "Game session does not exist"})
+	})
+})
+
 
