@@ -25,6 +25,32 @@ CREATE TABLE IF NOT EXISTS GameSessions (
 	is_active integer NOT NULL CHECK(is_active IN(0, 1))
 );`
 
+
+// Zombie stuff as global for now then move to data base
+class ZombieSeed {
+
+	constructor(id) {
+		this.id = id;
+		this.angle = Math.floor((Math.random() * 360));
+		this.distance = Math.random() * (2.0 - 1.5) + 1.5;
+		this.positionX = this.distance * Math.cos(this.angle * Math.PI / 180);
+		this.positionY = -0.4;
+		this.positionZ = this.distance * Math.sin(this.angle * Math.PI / 180);
+		
+	}
+
+}
+
+class Seeds {
+	constructor(wave, seedArray) {
+		this.waveNumber = wave;
+		this.zombieWave = seedArray;
+	}
+}
+
+var globalWave;
+
+
 const DB = new sqlite3.Database(DB_PATH, function(err) {
 	if (err) {
 		console.log('Failed to load database: ' + err)
@@ -247,3 +273,16 @@ app.get('/game-state-check/:gameId', (req, res) => {
 })
 
 
+app.get('/request-wave/:gameId', (req, res) => {
+	console.log('In request-wave');
+	const gameID = req.params.gameId;
+	const numberZombies = 3;
+	var seedAr = [];
+	for(var i = 0; i < numberZombies; i++) {
+		seedAr.push(new ZombieSeed(i));
+	}
+	var wave = 1;
+	globalWave = new Seeds(wave, seedAr);
+	json = JSON.stringify(globalWave);
+	res.send(json);
+})
