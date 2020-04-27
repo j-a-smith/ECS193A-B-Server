@@ -96,6 +96,12 @@ app.get('/join/:gameId/:uname', (req, res) => {
 		}
 
 		if (row) {
+
+			if (row.game_state > 0) {
+				res.send({err: "Game session already started"})
+				return
+			}
+
 			const playerSlots = [row.player2_username, row.player3_username, row.player4_username]
 			let playerColumn = null
 
@@ -149,7 +155,7 @@ app.get('/host-check/:gameId', (req, res) => {
 	})
 })
 
-// Alerts server that specific game session should move to base placement.
+// Alerts server that specific game session should move to base placement
 // Params:
 // 		:gameId - ID of the game session 
 // 		:uname  - Username of the player making request
@@ -182,16 +188,19 @@ app.get('/place-base/:gameId/:uname', (req, res) => {
 		}
 
 		var numBasesPlaced = 1
+		var numPlayersJoined = 0
 
 		if (row) {
 			const playerSlots = [row.player1_username, row.player2_username, row.player3_username, row.player4_username]
 			const didPlayersSetBase = [row.player1_didPlaceBase, row.player2_didPlaceBase, row.player3_didPlaceBase, row.player4_didPlaceBase]
 			
-			for (let i = 0; i < playerSlots.length; i++) {
+			for (let i = 0; i < playerSlots.length && playerSlots[i] != null; i++) {
 				if (playerSlots[i] == uname) 
 					playerColumn = i + 1
 				else
 					numBasesPlaced += didPlayersSetBase[i]
+				
+				numPlayersJoined++
 			}
 
 			if (playerColumn == null) {
@@ -204,7 +213,7 @@ app.get('/place-base/:gameId/:uname', (req, res) => {
 			return
 		}
 
-		var gameStateNum = (numBasesPlaced == 4) ? 2 : 1
+		var gameStateNum = (numBasesPlaced == numPlayersJoined) ? 2 : 1
 
 		DB.run(`UPDATE GameSessions SET player${playerColumn}_didPlaceBase = 1, game_state = :0 WHERE id = :1;`, gameStateNum, gameId, (err) => {
 			if (err) 
