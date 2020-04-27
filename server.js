@@ -4,8 +4,8 @@ const sqlite3 = require('sqlite3').verbose()
 const app = express()
 const port = 59435
 const hostName = 'server162.site'
-//const port = 3000
-//const hostName = 'localhost'
+// const port = 3000
+// const hostName = 'localhost'
 
 const GAME_STATES = ['init', 'bases', 'game', 'end']
 
@@ -49,6 +49,7 @@ class Seeds {
 }
 
 var globalWave;
+var ackCount = 0
 
 
 const DB = new sqlite3.Database(DB_PATH, function(err) {
@@ -285,4 +286,32 @@ app.get('/request-wave/:gameId', (req, res) => {
 	globalWave = new Seeds(wave, seedAr);
 	json = JSON.stringify(globalWave);
 	res.send(json);
+})
+
+app.get('/received-zombie/:gameId', (req, res) => {
+	ackCount++
+	res.send("Success")
+	return
+})
+
+app.get('/game-ready/:gameId', (req, res) => {
+	const gameId = req.params.gameId
+	DB.get(`SELECT * FROM GameSessions WHERE id = :0`, gameId, (err, row) => {
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		if (row) {
+			const playerSlots = [row.player1_username, row.player2_username, row.player3_username, row.player4_username]
+			
+			const numPlayers = playerSlots.reduce((count, player) => {
+				return (player == null) ? count : count + 1
+			}, 0)
+
+			res.send({ isReady: (numPlayers == ackCount) })
+		}
+		else
+			res.send({err: "Game session does not exist"})
+	})
 })
