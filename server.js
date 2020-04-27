@@ -2,10 +2,10 @@ const express = require('express')
 const sqlite3 = require('sqlite3').verbose()
 
 const app = express()
-// const port = 59435
-// const hostName = 'server162.site'
-const port = 3000
-const hostName = 'localhost'
+const port = 59435
+const hostName = 'server162.site'
+//const port = 3000
+//const hostName = 'localhost'
 
 const GAME_STATES = ['init', 'bases', 'game', 'end']
 
