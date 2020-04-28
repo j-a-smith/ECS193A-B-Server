@@ -1,5 +1,6 @@
 const express = require('express')
 const sqlite3 = require('sqlite3').verbose()
+const path = require('path')
 
 const app = express()
 const port = 59435
@@ -8,6 +9,10 @@ const hostName = 'server162.site'
 // const hostName = 'localhost'
 
 const GAME_STATES = ['init', 'bases', 'game', 'end']
+
+const ITEM_PNGS = {
+	'coffee mug': 'mug.png'
+}
 
 const DB_PATH = './sqlite.db'
 const dbSchema = `
@@ -23,6 +28,15 @@ CREATE TABLE IF NOT EXISTS GameSessions (
 	player3_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
 	player4_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
 	is_active integer NOT NULL CHECK(is_active IN(0, 1))
+);
+
+CREATE TABLE IF NOT EXISTS InventoryItems (
+	id integer PRIMARY KEY NOT NULL,
+	game_id integer NOT NULL,
+	player_name text NOT NULL,
+	item_name text NOT NULL,
+	png_name text,
+		FOREIGN KEY (game_id) REFERENCES GameSessions(id)
 );`
 
 
@@ -58,6 +72,14 @@ const DB = new sqlite3.Database(DB_PATH, function(err) {
 		return
 	}
 	console.log('Connected to ' + DB_PATH + ' database.')
+
+	DB.exec('PRAGMA foreign_keys = ON;', function(error)  {
+        if (error){
+            console.error("Failed to enable foreign keys")
+        } else {
+            console.log("Enabled foreign key enforcement")
+        }
+    });
 
 	DB.exec(dbSchema, function(err) {
 		if (err) {
@@ -313,5 +335,63 @@ app.get('/game-ready/:gameId', (req, res) => {
 		}
 		else
 			res.send({err: "Game session does not exist"})
+	})
+})
+
+///////////////////////////////
+///// INVENTORY ENDPOINTS /////
+///////////////////////////////
+
+app.get('/add-to-inventory/:gameId/:uname/:item', (req, res) => {
+	const { gameId, uname, item } = req.params
+
+	const png_name = ITEM_PNGS[item]
+
+	DB.run(`INSERT INTO InventoryItems (game_id, player_name, item_name, png_name)
+			VALUES (:0, :1, :2, :3);`, gameId, uname, item, png_name, (err) => {
+		if (err) 
+			res.send({err})
+		else
+			res.send("Success")
+	})
+})
+
+app.get('/fetch-inventory-items/:gameId/:uname', (req, res) => {
+	const { gameId, uname } = req.params
+	var items = []
+
+	DB.all(`SELECT * fROM InventoryItems WHERE game_id=:0 AND player_name=:1;`, [gameId, uname], (err, rows) => {
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		for (i in rows)
+			items.push(rows[i].item_name)
+		
+		res.send({items})
+	})
+})
+
+app.get('/fetch-thumbnail/:gameId/:uname/:item', (req, res) => {
+	const { gameId, uname, item } = req.params
+
+	DB.get(`SELECT png_name FROM InventoryItems WHERE game_id=:0 AND player_name=:1 AND item_name=:2;`, gameId, uname, item, (err, row) => {
+
+		if (err)
+			res.send({err})
+		
+		if (row) {
+			const png_name = row.png_name
+			const options = {
+				root: path.join(__dirname, 'inventoryItems')
+			}
+
+			console.log(options, png_name)
+
+			res.sendFile(png_name, options, (err) => {
+				console.log("Failed to send file: " + err.message)
+			})
+		}
 	})
 })
