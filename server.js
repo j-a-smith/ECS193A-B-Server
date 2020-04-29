@@ -11,7 +11,7 @@ const hostName = 'server162.site'
 const GAME_STATES = ['init', 'bases', 'game', 'end']
 
 const ITEM_PNGS = {
-	'coffee mug': 'mug.png'
+	'coffee-mug': 'mug.png'
 }
 
 const DB_PATH = './sqlite.db'
