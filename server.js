@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS GameSessions (
 	player2_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
 	player3_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
 	player4_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
+	ack_count integer NOT NULL DEFAULT 0,
 	is_active integer NOT NULL CHECK(is_active IN(0, 1))
 );
 
@@ -63,7 +64,6 @@ class Seeds {
 }
 
 var globalWave;
-var ackCount = 0
 
 
 const DB = new sqlite3.Database(DB_PATH, function(err) {
@@ -311,9 +311,25 @@ app.get('/request-wave/:gameId', (req, res) => {
 })
 
 app.get('/received-zombie/:gameId', (req, res) => {
-	ackCount++
-	res.send("Success")
-	return
+	const { gameId } = req.params
+
+	DB.get(`SELECT ack_count FROM GameSessions WHERE id = :0`, gameId, (err, row) => {
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		if (row) {
+			const newAckCount = row.ack_count + 1
+
+			DB.run(`UPDATE GameSessions SET ack_count=:0 WHERE id=:1;`, newAckCount, gameId, (err) => {
+				if (err) res.send({ err });
+				else res.send("Success")
+			})
+		}
+		else
+			res.send({err: "Game session does not exist"})
+	})
 })
 
 app.get('/game-ready/:gameId', (req, res) => {
@@ -331,7 +347,7 @@ app.get('/game-ready/:gameId', (req, res) => {
 				return (player == null) ? count : count + 1
 			}, 0)
 
-			res.send({ isReady: (numPlayers == ackCount) })
+			res.send({ isReady: (numPlayers == row.ack_count) })
 		}
 		else
 			res.send({err: "Game session does not exist"})
@@ -386,8 +402,6 @@ app.get('/fetch-thumbnail/:gameId/:uname/:item', (req, res) => {
 			const options = {
 				root: path.join(__dirname, 'inventoryItems')
 			}
-
-			console.log(options, png_name)
 
 			res.sendFile(png_name, options, (err) => {
 				console.log("Failed to send file: " + err.message)
