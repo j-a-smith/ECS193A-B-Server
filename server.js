@@ -65,6 +65,11 @@ class Seeds {
 
 var globalWave;
 
+var waveDataBase = {}
+
+
+
+
 
 const DB = new sqlite3.Database(DB_PATH, function(err) {
 	if (err) {
@@ -296,18 +301,37 @@ app.get('/game-state-check/:gameId', (req, res) => {
 })
 
 
+// ~~~~~~~~~~~~~~~~Zombie Stuff~~~~~~~~~~~~~~~~~
+
+
 app.get('/request-wave/:gameId', (req, res) => {
 	console.log('In request-wave');
+	//check to see if wave exists
 	const gameID = req.params.gameId;
-	const numberZombies = 3;
-	var seedAr = [];
-	for(var i = 0; i < numberZombies; i++) {
-		seedAr.push(new ZombieSeed(i));
+	var waveMade = dict.hasOwnProperty(gameID)
+	const numberZombies = 15;
+	if (waveMade) {
+		var w = dict[gameID];
+		json = JSON.stringify(w);
+		res.send(json);	
+	} else {	
+
+		var seedAr = [];
+		for(var i = 0; i < numberZombies; i++) {
+			seedAr.push(new ZombieSeed(i));
+		}
+		var wave = 1;
+		globalWave = new Seeds(wave, seedAr);
+		dict[gameID] = globalWave
+		json = JSON.stringify(globalWave);
+		res.send(json);
+
 	}
-	var wave = 1;
-	globalWave = new Seeds(wave, seedAr);
-	json = JSON.stringify(globalWave);
-	res.send(json);
+})
+
+app.get('/upate-wave/:gameId', (req, res) => {
+	
+
 })
 
 app.get('/received-zombie/:gameId', (req, res) => {
@@ -404,7 +428,8 @@ app.get('/fetch-thumbnail/:gameId/:uname/:item', (req, res) => {
 			}
 
 			res.sendFile(png_name, options, (err) => {
-				console.log("Failed to send file: " + err.message)
+				if (err)
+					console.log("Failed to send file: " + err.message)
 			})
 		}
 	})
