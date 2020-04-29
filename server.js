@@ -11,7 +11,7 @@ const hostName = 'server162.site'
 const GAME_STATES = ['init', 'bases', 'game', 'end']
 
 const ITEM_PNGS = {
-	'coffee-mug'   : 'coffee-mug.png',
+	'coffee-mug'   : 'mug.png',
 	'keyboard'     : 'keyboard.png',
 	'pencil'       : 'pencil.png',
 	'rubiks-cube'  : 'rubiks-cube.png',
