@@ -11,7 +11,13 @@ const hostName = 'server162.site'
 const GAME_STATES = ['init', 'bases', 'game', 'end']
 
 const ITEM_PNGS = {
-	'coffee-mug': 'mug.png'
+	'coffee-mug'   : 'coffee-mug.png',
+	'keyboard'     : 'keyboard.png',
+	'pencil'       : 'pencil.png',
+	'rubiks-cube'  : 'rubiks-cube.png',
+	'smartphone'   : 'smartphone.png',
+	'stop-sign'    : 'stop-sign.png',
+	'watter-bottle': 'water-bottle.png'
 }
 
 const DB_PATH = './sqlite.db'
@@ -66,10 +72,6 @@ class Seeds {
 var globalWave;
 
 var waveDataBase = {}
-
-
-
-
 
 const DB = new sqlite3.Database(DB_PATH, function(err) {
 	if (err) {
@@ -423,6 +425,11 @@ app.get('/fetch-thumbnail/:gameId/:uname/:item', (req, res) => {
 		
 		if (row) {
 			const png_name = row.png_name
+
+			if (png_name == null) {
+				res.send({err: `No file named ${png_name} on server`})
+			}
+
 			const options = {
 				root: path.join(__dirname, 'inventoryItems')
 			}
