@@ -449,8 +449,10 @@ app.get('/fetch-thumbnail/:gameId/:uname/:item', (req, res) => {
 			}
 
 			res.sendFile(png_name, options, (err) => {
-				if (err)
+				if (err) {
 					console.log("Failed to send file: " + err.message)
+					res.send({err})
+				}
 			})
 		}
 	})
