@@ -17,7 +17,7 @@ const ITEM_PNGS = {
 	'rubiks-cube'  : 'rubiks-cube.png',
 	'smartphone'   : 'smartphone.png',
 	'stop-sign'    : 'stop-sign.png',
-	'watter-bottle': 'water-bottle.png'
+	'water-bottle': 'water-bottle.png'
 }
 
 const DB_PATH = './sqlite.db'
@@ -127,13 +127,23 @@ app.get('/host-request/:uname', (req, res) => {
 			}
 	
 			DB.get(`SELECT * FROM GameSessions ORDER BY ID DESC;`, (err, row) => {
-				if (err)
+				if (err) {
 					res.send({err})
-				else
+					return
+				}
+
+				DB.run(`INSERT INTO InventoryItems (game_id, player_name, item_name, png_name) 
+							VALUES (:0, :1, "bullet", "bullet.png");`, row.id, uname, (err) => {
+					if (err) {
+					res.send({err})
+						return
+					}
+
 					res.send({gameId: row.id})
 			})
 		})
 	})
+})
 })
 
 // Allows user to join requested game session. Fails if session is full.
@@ -179,7 +189,15 @@ app.get('/join/:gameId/:uname', (req, res) => {
 					return
 				}
 		
+				DB.run(`INSERT INTO InventoryItems (game_id, player_name, item_name, png_name) 
+							VALUES (:0, :1, "bullet", "bullet.png");`, gameId, uname, (err) => {
+					if (err) {
+						res.send({err, didConnect: false})
+						return
+					}
+					
 				res.send({didConnect: true})
+			})
 			})
 		}
 	})
@@ -425,10 +443,6 @@ app.get('/fetch-thumbnail/:gameId/:uname/:item', (req, res) => {
 		
 		if (row) {
 			const png_name = row.png_name
-
-			if (png_name == null) {
-				res.send({err: `No file named ${png_name} on server`})
-			}
 
 			const options = {
 				root: path.join(__dirname, 'inventoryItems')
