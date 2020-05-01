@@ -11,7 +11,7 @@ const hostName = 'server162.site'
 const GAME_STATES = ['init', 'bases', 'game', 'end']
 
 const ITEM_PNGS = {
-	'coffee-mug'   : 'coffee-mug.png',
+	'coffee-mug'   : 'mug.png',
 	'keyboard'     : 'keyboard.png',
 	'pencil'       : 'pencil.png',
 	'rubiks-cube'  : 'rubiks-cube.png',
@@ -328,10 +328,10 @@ app.get('/request-wave/:gameId', (req, res) => {
 	console.log('In request-wave');
 	//check to see if wave exists
 	const gameID = req.params.gameId;
-	var waveMade = dict.hasOwnProperty(gameID)
+	var waveMade = waveDataBase.hasOwnProperty(gameID)
 	const numberZombies = 15;
 	if (waveMade) {
-		var w = dict[gameID];
+		var w = waveDataBase[gameID];
 		json = JSON.stringify(w);
 		res.send(json);	
 	} else {	
@@ -342,7 +342,7 @@ app.get('/request-wave/:gameId', (req, res) => {
 		}
 		var wave = 1;
 		globalWave = new Seeds(wave, seedAr);
-		dict[gameID] = globalWave
+		waveDataBase[gameID] = globalWave
 		json = JSON.stringify(globalWave);
 		res.send(json);
 
