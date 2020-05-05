@@ -1,7 +1,7 @@
 const express = require('express')
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
-
+const bodyParser = require('body-parser')
 const app = express()
 const port = 59435
 const hostName = 'server162.site'
@@ -12,6 +12,7 @@ const GAME_STATES = ['init', 'bases', 'game', 'end']
 
 const ITEM_PNGS = {
 	'coffee-mug'   : 'mug.png',
+	'cup'          : 'mug.png',
 	'keyboard'     : 'keyboard.png',
 	'pencil'       : 'pencil.png',
 	'rubiks-cube'  : 'rubiks-cube.png',
@@ -94,7 +95,11 @@ const DB = new sqlite3.Database(DB_PATH, function(err) {
 		}
 	});
 });
-
+//app.use(bodyParser.text());
+//app.use(bodyParser.urlencoded( {extended: true}));
+//app.use(bodyParser.json());
+//app.use(bodyParser.raw());
+app.use(bodyParser.json());
 app.listen(port, hostName, () => console.log(`Listening at http://${hostName}:${port}`))
 
 app.get('/', (req, res) => res.send('Welcome to the game server for None to Mourn!'))
@@ -349,10 +354,12 @@ app.get('/request-wave/:gameId', (req, res) => {
 	}
 })
 
-app.get('/upate-wave/:gameId', (req, res) => {
-	
-
-})
+app.post('/update-wave/:gameId', (req, res) => {
+	console.log("In update-wave!!");
+	var json = req.body;
+	console.log(json);
+	res.send("Request Recieved")
+});
 
 app.get('/received-zombie/:gameId', (req, res) => {
 	const { gameId } = req.params
