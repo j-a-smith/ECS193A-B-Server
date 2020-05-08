@@ -18,7 +18,10 @@ const ITEM_PNGS = {
 	'rubiks-cube'  : 'rubiks-cube.png',
 	'smartphone'   : 'smartphone.png',
 	'stop-sign'    : 'stop-sign.png',
-	'water-bottle': 'water-bottle.png'
+	'water-bottle' : 'water-bottle.png',
+	'glasses'      : 'glasses.png',
+	'sunglasses'   : 'glasses.png',
+	'lamp'         : 'lamp.png',
 }
 
 const DB_PATH = './sqlite.db'
