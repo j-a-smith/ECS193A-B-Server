@@ -341,9 +341,9 @@ app.get('/request-wave/:gameId', (req, res) => {
 		res.send(json);	
 	} else {	
 
-		var seedAr = [];
+		var seedAr = {};
 		for(var i = 0; i < numberZombies; i++) {
-			seedAr.push(new ZombieSeed(i));
+			seedAr[i.toString()] = new ZombieSeed(i);
 		}
 		var wave = 1;
 		globalWave = new Seeds(wave, seedAr);
@@ -358,7 +358,29 @@ app.post('/update-wave/:gameId', (req, res) => {
 	console.log("In update-wave!!");
 	var json = req.body;
 	console.log(json);
-	res.send("Request Recieved")
+	const gameID = req.params.gameId;
+
+	//get database object
+	var seedsObj = waveDataBase[gameID];
+	var waveNum = seedsObj.waveNumber;
+	var waveArray = seedsObj.zombieWave;
+	
+	//update wave with deaths by removing
+	for (var key in json) {
+		var ret = waveArray[key];
+		if(ret == undefined) {
+			continue;
+		} else {
+			delete waveArray[key]; //removing form array
+		}
+	}
+
+	//store updated array
+	waveDataBase[gameID] = new Seeds(waveNum, waveArray);
+
+	//send back updated array as it might contain other players stuff
+	json = JSON.stringify(waveDataBase[gameID]);
+	res.send(json)
 });
 
 app.get('/received-zombie/:gameId', (req, res) => {
