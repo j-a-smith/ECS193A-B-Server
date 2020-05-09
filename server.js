@@ -29,6 +29,8 @@ const dbSchema = `
 CREATE TABLE IF NOT EXISTS GameSessions (
 	id integer PRIMARY KEY NOT NULL,
 	game_state integer NOT NULL,
+	game_name text NOT NULL,
+	password text NOT NULL UNIQUE,
 	player1_username text NOT NULL,
 	player2_username text,
 	player3_username text,
@@ -107,13 +109,33 @@ app.listen(port, hostName, () => console.log(`Listening at http://${hostName}:${
 
 app.get('/', (req, res) => res.send('Welcome to the game server for None to Mourn!'))
 
+// Returns all game session names and ids
+// Returns:
+//		gameInfo - JSON with game names mapped to game ids
+app.get('/fetch-active-games', (req, res) => {
+	DB.all(`SELECT * FROM GameSessions WHERE is_active = 1`, (err, rows) => {
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		var gameInfo = {}
+		for (var i in rows) {
+			gameInfo[rows[i].game_name] = rows[i].id
+		}
+
+		res.send(gameInfo)
+	})
+})
+
+
 // Checks if user has associated active game session. If not, creates session row and returns ID.
 // Params:
 // 		:uname - username of the player requesting to host a game session
 // Returns:
 //		gameId - id number for new game session
-app.get('/host-request/:uname', (req, res) => {
-	const uname = req.params.uname
+app.get('/host-request/:uname/:gname/:pw', (req, res) => {
+	const {uname, gname, pw} = req.params
 
 	DB.all(`SELECT * FROM GameSessions WHERE player1_username = :0 AND is_active = 1`, uname, (err, rows) => {
 		if (err) {
@@ -126,9 +148,9 @@ app.get('/host-request/:uname', (req, res) => {
 			return
 		}
 
-		DB.run(`INSERT INTO GameSessions (player1_username, game_state, is_active, player1_didPlaceBase,
-				player2_didPlaceBase, player3_didPlaceBase, player4_didPlaceBase) VALUES (:0, :1, :2, :3, :4, :5, :6);`, 
-				uname, 0, 1, 0, 0, 0, 0, (err) => {
+		DB.run(`INSERT INTO GameSessions (game_name, password, player1_username, game_state, is_active, player1_didPlaceBase,
+				player2_didPlaceBase, player3_didPlaceBase, player4_didPlaceBase) VALUES (:0, :1, :2, :3, :4, :5, :6, :7, :8);`, 
+				gname, pw, uname, 0, 1, 0, 0, 0, 0, (err) => {
 			if (err) {
 				res.send({err})
 				return
@@ -160,8 +182,8 @@ app.get('/host-request/:uname', (req, res) => {
 // 		:uname  - Username of the player requesting to join
 // Returns:
 //		didConnect - Boolean reflecting whether player successfully joined or not
-app.get('/join/:gameId/:uname', (req, res) => {
-	const { gameId, uname } = req.params
+app.get('/join/:gameId/:uname/:pw', (req, res) => {
+	const { gameId, uname, pw } = req.params
 
 	DB.get(`SELECT * FROM GameSessions WHERE id = :0`, gameId, (err, row) => {
 		if (err) {
@@ -173,6 +195,11 @@ app.get('/join/:gameId/:uname', (req, res) => {
 
 			if (row.game_state > 0) {
 				res.send({err: "Game session already started"})
+				return
+			}
+
+			if (row.password != pw) {
+				res.send({err: "Incorrect password"})
 				return
 			}
 
