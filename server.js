@@ -413,6 +413,63 @@ app.post('/update-wave/:gameId', (req, res) => {
 	res.send(json)
 });
 
+
+function isEmpty(obj) {
+	for(var key in obj) {
+		if(obj.hasOwnProperty(key))
+			return false
+	}
+	return true;
+}
+
+
+app.get('/new-wave/:waveNum/:gameId', (req, res) => {
+
+	//Calculate number of zombies
+	const zombieCap = 35;
+	const waveNum = parseInt(req.params.waveNum, 10);
+	const gameId = req.params.gameId;
+	var numberOfZombies = 15 + (waveNum-1) * 5;
+	if (numberOfZombies >= zombieCap) {
+		numberOfZombies = zombieCap;
+	}
+
+	// get curretn wave
+	var seedObj = waveDataBase[gameId]
+	var waveArray = seedObj.zombieWave;
+
+	//new wave for this game ID hasn't been made yet
+	console.log(waveArray)
+	if(isEmpty(waveArray)) {
+		//reset ack count in database since jumping to received-zombie endpoint again
+		DB.run(`UPDATE GameSessions SET ack_count=:0 WHERE id=:1;`, 0, gameId, (err) => {
+			if (err) {
+				res.send({err})
+				return
+			}
+		});
+		
+		var seedAr = {};
+		for(var i = 0; i < numberOfZombies; i++) {
+			seedAr[i.toString()] = new ZombieSeed(i);
+		}
+		var wave = waveNum + 1;
+		globalWave = new Seeds(wave, seedAr);
+		//store in "database"
+		waveDataBase[gameId] = globalWave;
+		var json = JSON.stringify(globalWave);
+		res.send(json);			
+	} else {
+		var w = waveDataBase[gameId];
+		var json = JSON.stringify(w);
+		res.send(json);
+	}
+	
+});
+
+
+
+
 app.get('/received-zombie/:gameId', (req, res) => {
 	const { gameId } = req.params
 
