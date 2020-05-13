@@ -78,6 +78,8 @@ class Seeds {
 var globalWave;
 
 var waveDataBase = {}
+var healthDataBase = {}
+
 
 const DB = new sqlite3.Database(DB_PATH, function(err) {
 	if (err) {
@@ -360,10 +362,21 @@ app.get('/game-state-check/:gameId', (req, res) => {
 
 
 app.get('/request-wave/:gameId', (req, res) => {
-	console.log('In request-wave');
+	
+
+
+
 	//check to see if wave exists
 	const gameID = req.params.gameId;
-	var waveMade = waveDataBase.hasOwnProperty(gameID)
+	//set base health
+        var waveMade = waveDataBase.hasOwnProperty(gameID);
+	var hasHealth = healthDataBase.hasOwnProperty(gameID);
+
+	if(!hasHealth) {
+		console.log("Init. Health to 3");
+		healthDataBase[gameID] = 3;
+	}
+	
 	const numberZombies = 15;
 	if (waveMade) {
 		var w = waveDataBase[gameID];
@@ -385,9 +398,9 @@ app.get('/request-wave/:gameId', (req, res) => {
 })
 
 app.post('/update-wave/:gameId', (req, res) => {
-	console.log("In update-wave!!");
+	//console.log("In update-wave!!");
 	var json = req.body;
-	console.log(json);
+	//console.log(json);
 	const gameID = req.params.gameId;
 
 	//get database object
@@ -409,7 +422,21 @@ app.post('/update-wave/:gameId', (req, res) => {
 	waveDataBase[gameID] = new Seeds(waveNum, waveArray);
 
 	//send back updated array as it might contain other players stuff
-	json = JSON.stringify(waveDataBase[gameID]);
+	var zombieUpdate = waveDataBase[gameID];
+	var health = healthDataBase[gameID];
+	var jsonObj = {};
+	jsonObj["ZombieUpdate"] = zombieUpdate;
+	jsonObj["Health"] = health;
+	
+	if (health <= 0) {
+		jsonObj["isGameOver"] = true;
+	} else {
+		jsonObj["isGameOver"] = false;
+	}	
+
+	console.log("Update wave response");
+	console.log(jsonObj);
+	json = JSON.stringify(jsonObj);
 	res.send(json)
 });
 
@@ -439,8 +466,8 @@ app.get('/new-wave/:waveNum/:gameId', (req, res) => {
 	var waveArray = seedObj.zombieWave;
 
 	//new wave for this game ID hasn't been made yet
-	console.log(waveArray)
 	if(isEmpty(waveArray)) {
+		console.log("isEmpty")
 		//reset ack count in database since jumping to received-zombie endpoint again
 		DB.run(`UPDATE GameSessions SET ack_count=:0 WHERE id=:1;`, 0, gameId, (err) => {
 			if (err) {
@@ -460,7 +487,9 @@ app.get('/new-wave/:waveNum/:gameId', (req, res) => {
 		var json = JSON.stringify(globalWave);
 		res.send(json);			
 	} else {
+		console.log("In old");
 		var w = waveDataBase[gameId];
+		console.log(w);
 		var json = JSON.stringify(w);
 		res.send(json);
 	}
@@ -491,6 +520,47 @@ app.get('/received-zombie/:gameId', (req, res) => {
 			res.send({err: "Game session does not exist"})
 	})
 })
+
+
+app.post('/update-health/:gameId', (req, res) => {
+	console.log("Updatind health");
+	var json = req.body;
+	const gameID = req.params.gameId;
+
+	//get server health
+	var serverHealth = healthDataBase[gameID];
+	console.log("server Health");
+	console.log(serverHealth);
+	
+	//get health form client
+	var clientHealth = parseInt(json["Health"], 10);
+	console.log("Client Health");
+	console.log(clientHealth);
+	
+	var json = {};
+	if (serverHealth < clientHealth) {
+		json["Health"] = serverHealth;
+	} else {
+		json["Health"] = clientHealth;
+	}
+	if (json["Health"] == 0) {
+		json["isGameOver"] = true;
+	} else {
+		json["isGameOver"] = false;
+	}
+	
+	//update health on server
+	healthDataBase[gameID] = json["Health"];
+
+	var jsonObj = JSON.stringify(json);
+	console.log("update response");
+	console.log(jsonObj);
+	res.send(jsonObj);
+})
+
+
+
+
 
 app.get('/game-ready/:gameId', (req, res) => {
 	const gameId = req.params.gameId
