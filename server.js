@@ -3,10 +3,10 @@ const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 const bodyParser = require('body-parser')
 const app = express()
-const port = 59435
-const hostName = 'server162.site'
-// const port = 3000
-// const hostName = 'localhost'
+// const port = 59435
+// const hostName = 'server162.site'
+const port = 3000
+const hostName = 'localhost'
 
 const GAME_STATES = ['init', 'bases', 'game', 'end']
 
@@ -355,6 +355,18 @@ app.get('/game-state-check/:gameId', (req, res) => {
 	})
 })
 
+// Sets game sessions to not active
+// Params:
+//		:gameId - ID of game session to kill
+app.get('/kill-game/:gameId', (req, res) => {
+	let { gameId } = req.params
+	DB.run(`UPDATE GameSessions SET is_active=:0, game_state=:1 WHERE id=:2;`, 0, 3, gameId, (err) => {
+		if (err) 
+			res.send({err})
+		else 
+			res.send("Success")
+	});
+})
 
 // ~~~~~~~~~~~~~~~~Zombie Stuff~~~~~~~~~~~~~~~~~
 
