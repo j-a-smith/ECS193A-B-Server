@@ -1,0 +1,87 @@
+{
+	"bullet": {
+		"png": "bullet.png",
+		"animation": "normal",
+		"damage": 1
+    },
+    "coffee-mug": {
+		"png": "mug.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"cup": {
+		"png": "mug.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"keyboard": {
+		"png": "keyboard.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"pencil": {
+		"png": "pencil.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"rubiks-cube": {
+		"png": "rubiks-cube.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"smartphone": {
+		"png": "smartphone.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"stop-sign": {
+		"png": "stop-sign.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"water-bottle": {
+		"png": "water-bottle.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"glasses": {
+		"png": "glasses.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"sunglasses": {
+		"png": "glasses.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"lamp": {
+		"png": "lamp.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"baseball-bat": {
+		"png": "baseball-bat.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"bowl": {
+		"png": "bowl.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"mixing-bowl": {
+		"png": "bowl.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"plate": {
+		"png": "plate.png",
+		"animation": "normal",
+		"damage": 1
+	},
+	"toothbrush": {
+		"png": "toothbrush.png",
+		"animation": "normal",
+		"damage": 1
+	}
+}

@@ -3,26 +3,13 @@ const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 const bodyParser = require('body-parser')
 const app = express()
+var itemAttributes = require('./itemAttributes.json')
 const port = 59435
 const hostName = 'server162.site'
 // const port = 3000
 // const hostName = 'localhost'
 
 const GAME_STATES = ['init', 'bases', 'game', 'end']
-
-const ITEM_PNGS = {
-	'coffee-mug'   : 'mug.png',
-	'cup'          : 'mug.png',
-	'keyboard'     : 'keyboard.png',
-	'pencil'       : 'pencil.png',
-	'rubiks-cube'  : 'rubiks-cube.png',
-	'smartphone'   : 'smartphone.png',
-	'stop-sign'    : 'stop-sign.png',
-	'water-bottle' : 'water-bottle.png',
-	'glasses'      : 'glasses.png',
-	'sunglasses'   : 'glasses.png',
-	'lamp'         : 'lamp.png',
-}
 
 const DB_PATH = './sqlite.db'
 const dbSchema = `
@@ -43,13 +30,21 @@ CREATE TABLE IF NOT EXISTS GameSessions (
 	is_active integer NOT NULL CHECK(is_active IN(0, 1))
 );
 
-CREATE TABLE IF NOT EXISTS InventoryItems (
+CREATE TABLE IF NOT EXISTS Items (
+	id integer PRIMARY KEY NOT NULL,
+	item_name text UNIQUE NOT NULL,
+	png_name text,
+	animation text,
+	damage text
+);
+
+CREATE TABLE IF NOT EXISTS Inventories (
 	id integer PRIMARY KEY NOT NULL,
 	game_id integer NOT NULL,
+	item_id integer NOT NULL,
 	player_name text NOT NULL,
-	item_name text NOT NULL,
-	png_name text,
-		FOREIGN KEY (game_id) REFERENCES GameSessions(id)
+		FOREIGN KEY (game_id) REFERENCES GameSessions(id),
+		FOREIGN KEY (item_id) REFERENCES Items(id)
 );`
 
 
@@ -101,6 +96,16 @@ const DB = new sqlite3.Database(DB_PATH, function(err) {
 			console.log('Failed to run schema: ' + err)
 		}
 	});
+
+	for (var item_name in itemAttributes) {
+		let attributes = itemAttributes[item_name]
+		DB.run(`INSERT INTO Items (item_name, png_name, animation, damage)
+		SELECT :0, :1, :2, :3 WHERE NOT EXISTS (SELECT * FROM Items WHERE item_name = :0);`,
+		item_name, attributes["png"], attributes["animation"], attributes["damage"], (err) => {
+			if (err)
+				console.log('Error adding item: ', err)
+		})
+	}
 });
 //app.use(bodyParser.text());
 //app.use(bodyParser.urlencoded( {extended: true}));
@@ -164,15 +169,26 @@ app.get('/host-request/:uname/:gname/:pw', (req, res) => {
 					return
 				}
 
-				DB.run(`INSERT INTO InventoryItems (game_id, player_name, item_name, png_name) 
-							VALUES (:0, :1, "bullet", "bullet.png");`, row.id, uname, (err) => {
+				let game_id = row.id
+
+				DB.get(`SELECT id FROM Items WHERE item_name = "bullet";`, (err, row) => {
 					if (err) {
-					res.send({err})
+						res.send({err})
 						return
 					}
 
-					res.send({gameId: row.id})
-			})
+					let item_id = row.id
+
+					DB.run(`INSERT INTO Inventories (game_id, item_id, player_name) 
+								VALUES (:0, :1, :2);`, game_id, item_id, uname, (err) => {
+						if (err) {
+						res.send({err})
+							return
+						}
+
+						res.send({gameId: game_id})
+					})
+				})
 		})
 	})
 })
@@ -225,16 +241,25 @@ app.get('/join/:gameId/:uname/:pw', (req, res) => {
 					res.send({err, didConnect: false})
 					return
 				}
-		
-				DB.run(`INSERT INTO InventoryItems (game_id, player_name, item_name, png_name) 
-							VALUES (:0, :1, "bullet", "bullet.png");`, gameId, uname, (err) => {
+
+				DB.get(`SELECT id FROM Items WHERE item_name = "bullet";`, (err, row) => {
 					if (err) {
-						res.send({err, didConnect: false})
+						res.send({err})
 						return
 					}
-					
-				res.send({didConnect: true})
-			})
+
+					let itemId = row.id
+		
+					DB.run(`INSERT INTO Inventories (game_id, item_id, player_name) 
+								VALUES (:0, :1, :2);`, gameId, itemId, uname, (err) => {
+						if (err) {
+							res.send({err, didConnect: false})
+							return
+						}
+						
+						res.send({didConnect: true})
+					})
+				})
 			})
 		}
 	})
@@ -357,6 +382,18 @@ app.get('/game-state-check/:gameId', (req, res) => {
 	})
 })
 
+// Sets game sessions to not active
+// Params:
+//		:gameId - ID of game session to kill
+app.get('/kill-game/:gameId', (req, res) => {
+	let { gameId } = req.params
+	DB.run(`UPDATE GameSessions SET is_active=:0, game_state=:1 WHERE id=:2;`, 0, 3, gameId, (err) => {
+		if (err) 
+			res.send({err})
+		else 
+			res.send("Success")
+	});
+})
 
 // ~~~~~~~~~~~~~~~~Zombie Stuff~~~~~~~~~~~~~~~~~
 
@@ -449,7 +486,6 @@ function isEmpty(obj) {
 	return true;
 }
 
-
 app.get('/new-wave/:waveNum/:gameId', (req, res) => {
 
 	//Calculate number of zombies
@@ -495,9 +531,6 @@ app.get('/new-wave/:waveNum/:gameId', (req, res) => {
 	}
 	
 });
-
-
-
 
 app.get('/received-zombie/:gameId', (req, res) => {
 	const { gameId } = req.params
@@ -591,14 +624,25 @@ app.get('/game-ready/:gameId', (req, res) => {
 app.get('/add-to-inventory/:gameId/:uname/:item', (req, res) => {
 	const { gameId, uname, item } = req.params
 
-	const png_name = ITEM_PNGS[item]
+	DB.get(`SELECT id FROM Items WHERE item_name = :0`, item, (err, row) => {
 
-	DB.run(`INSERT INTO InventoryItems (game_id, player_name, item_name, png_name)
-			VALUES (:0, :1, :2, :3);`, gameId, uname, item, png_name, (err) => {
-		if (err) 
+		if (err) {
 			res.send({err})
-		else
-			res.send("Success")
+			return
+		}
+		else if (!row || row.length == 0) {
+			res.send({err: "Item does not exist"})
+		}
+
+		let itemId = row.id
+
+		DB.run(`INSERT INTO Inventories (game_id, item_id, player_name)
+				VALUES (:0, :1, :2);`, gameId, itemId, uname, (err) => {
+			if (err) 
+				res.send({err})
+			else
+				res.send("Success")
+		})
 	})
 })
 
@@ -606,7 +650,7 @@ app.get('/fetch-inventory-items/:gameId/:uname', (req, res) => {
 	const { gameId, uname } = req.params
 	var items = []
 
-	DB.all(`SELECT * fROM InventoryItems WHERE game_id=:0 AND player_name=:1;`, [gameId, uname], (err, rows) => {
+	DB.all(`SELECT * fROM Inventories INNER JOIN Items ON Inventories.item_id = Items.id WHERE game_id=:0 AND player_name=:1;`, [gameId, uname], (err, rows) => {
 		if (err) {
 			res.send({err})
 			return
@@ -619,10 +663,10 @@ app.get('/fetch-inventory-items/:gameId/:uname', (req, res) => {
 	})
 })
 
-app.get('/fetch-thumbnail/:gameId/:uname/:item', (req, res) => {
-	const { gameId, uname, item } = req.params
+app.get('/fetch-thumbnail/:item', (req, res) => {
+	const { item } = req.params
 
-	DB.get(`SELECT png_name FROM InventoryItems WHERE game_id=:0 AND player_name=:1 AND item_name=:2;`, gameId, uname, item, (err, row) => {
+	DB.get(`SELECT png_name FROM Items WHERE item_name=:0;`, item, (err, row) => {
 
 		if (err)
 			res.send({err})
