@@ -632,6 +632,7 @@ app.get('/add-to-inventory/:gameId/:uname/:item', (req, res) => {
 		}
 		else if (!row || row.length == 0) {
 			res.send({err: "Item does not exist"})
+			return
 		}
 
 		let itemId = row.id
@@ -656,10 +657,7 @@ app.get('/fetch-inventory-items/:gameId/:uname', (req, res) => {
 			return
 		}
 
-		for (i in rows)
-			items.push(rows[i].item_name)
-		
-		res.send({items})
+		res.send({items: rows})
 	})
 })
 
