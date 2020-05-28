@@ -49,7 +49,7 @@
 		"animation": "normal",
 		"damage": 1
 	},
-	"sunglasses": {
+	"sunglass": {
 		"png": "glasses.png",
 		"animation": "normal",
 		"damage": 1
