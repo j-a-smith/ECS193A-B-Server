@@ -693,13 +693,21 @@ app.get('/fetch-thumbnail/:item', (req, res) => {
 app.get('/set-score/:gameid/:score', (req, res) => {
 	const { gameid, score } = req.params
 
-	DB.run(`UPDATE GameSessions SET final_score=:0 WHERE id=:1;`, score, gameid, (err, row) => {
+	DB.get(`SELECT final_score FROM GameSessions WHERE id=:0;`, gameid, (err, row) => {
+		if (err) {
+			res.send({err})
+			return
+		}
 
+		let newScore = Number(row.final_score) + Number(score)
+
+		DB.run(`UPDATE GameSessions SET final_score=:0 WHERE id=:1;`, newScore, gameid, (err) => {
 		if (err)
 			res.send({err})
 		else
 			res.send("Success")
 	})
+})
 })
 
 app.get('/get-scores', (req, res) => {
