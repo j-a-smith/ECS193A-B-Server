@@ -16,8 +16,8 @@ const dbSchema = `
 CREATE TABLE IF NOT EXISTS GameSessions (
 	id integer PRIMARY KEY NOT NULL,
 	game_state integer NOT NULL,
-	game_name text NOT NULL,
-	password text NOT NULL UNIQUE,
+	game_name text NOT NULL UNIQUE,
+	password text NOT NULL,
 	player1_username text NOT NULL,
 	player2_username text,
 	player3_username text,
@@ -149,7 +149,7 @@ app.get('/host-request/:uname/:gname/:pw', (req, res) => {
 		}
 
 		if (rows.length > 0) {
-			res.send({err: "Game already in session", gameId: rows[0].id})
+			res.send({err: "Player already has game already in session", gameId: rows[0].id})
 			return
 		}
 
