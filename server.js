@@ -16,8 +16,8 @@ const dbSchema = `
 CREATE TABLE IF NOT EXISTS GameSessions (
 	id integer PRIMARY KEY NOT NULL,
 	game_state integer NOT NULL,
-	game_name text NOT NULL,
-	password text NOT NULL UNIQUE,
+	game_name text NOT NULL UNIQUE,
+	password text NOT NULL,
 	player1_username text NOT NULL,
 	player2_username text,
 	player3_username text,
@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS GameSessions (
 	player3_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
 	player4_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
 	ack_count integer NOT NULL DEFAULT 0,
+	final_score integer NOT NULL DEFAULT 0,
 	is_active integer NOT NULL CHECK(is_active IN(0, 1))
 );
 
@@ -151,7 +152,7 @@ app.get('/host-request/:uname/:gname/:pw', (req, res) => {
 		}
 
 		if (rows.length > 0) {
-			res.send({err: "Game already in session", gameId: rows[0].id})
+			res.send({err: "Player already has game already in session", gameId: rows[0].id})
 			return
 		}
 
@@ -760,5 +761,39 @@ app.get('/fetch-thumbnail/:item', (req, res) => {
 				}
 			})
 		}
+	})
+})
+
+app.get('/set-score/:gameid/:score', (req, res) => {
+	const { gameid, score } = req.params
+
+	DB.get(`SELECT final_score FROM GameSessions WHERE id=:0;`, gameid, (err, row) => {
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		let newScore = Number(row.final_score) + Number(score)
+
+		DB.run(`UPDATE GameSessions SET final_score=:0 WHERE id=:1;`, newScore, gameid, (err) => {
+		if (err)
+			res.send({err})
+		else
+			res.send("Success")
+	})
+})
+})
+
+app.get('/get-scores', (req, res) => {
+
+	DB.all(`SELECT game_name, player1_username, player2_username, player3_username, player4_username, final_score
+	 		FROM GameSessions ORDER BY final_score DESC;`, (err, rows) => {
+
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		res.send({rows})
 	})
 })
