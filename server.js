@@ -649,15 +649,18 @@ app.get('/add-to-inventory/:gameId/:uname/:item', (req, res) => {
 
 app.get('/fetch-inventory-items/:gameId/:uname', (req, res) => {
 	const { gameId, uname } = req.params
-	var items = []
+	var items = {}
 
 	DB.all(`SELECT * fROM Inventories INNER JOIN Items ON Inventories.item_id = Items.id WHERE game_id=:0 AND player_name=:1;`, [gameId, uname], (err, rows) => {
 		if (err) {
 			res.send({err})
 			return
 		}
-
-		res.send({items: rows})
+		
+		for (var i in rows) {
+			items[i] = rows[i]
+		}
+		res.send({items})
 	})
 })
 
