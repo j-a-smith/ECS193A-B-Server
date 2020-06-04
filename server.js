@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS GameSessions (
 	player3_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
 	player4_didPlaceBase integer NOT NULL CHECK(is_active IN(0, 1)),
 	ack_count integer NOT NULL DEFAULT 0,
+	final_score integer NOT NULL DEFAULT 0,
 	is_active integer NOT NULL CHECK(is_active IN(0, 1))
 );
 
@@ -686,5 +687,31 @@ app.get('/fetch-thumbnail/:item', (req, res) => {
 				}
 			})
 		}
+	})
+})
+
+app.get('/set-score/:gameid/:score', (req, res) => {
+	const { gameid, score } = req.params
+
+	DB.run(`UPDATE GameSessions SET final_score=:0 WHERE id=:1;`, score, gameid, (err, row) => {
+
+		if (err)
+			res.send({err})
+		else
+			res.send("Success")
+	})
+})
+
+app.get('/get-scores', (req, res) => {
+
+	DB.all(`SELECT game_name, player1_username, player2_username, player3_username, player4_username, final_score
+	 		FROM GameSessions ORDER BY final_score DESC;`, (err, rows) => {
+
+		if (err) {
+			res.send({err})
+			return
+		}
+
+		res.send({rows})
 	})
 })
