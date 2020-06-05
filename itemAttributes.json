@@ -14,6 +14,21 @@
 		"animation": "spin",
 		"damage": 2
 	},
+	"measuring-cup": {
+		"png": "mug.png",
+		"animation": "spin",
+		"damage": 2
+	},
+	"bathtub": {
+		"png": "bowl.png",
+		"animation": "spin",
+		"damage": 2
+	},
+	"toilet-seat": {
+		"png": "bowl.png",
+		"animation": "spin",
+		"damage": 2
+	},
 	"keyboard": {
 		"png": "keyboard.png",
 		"animation": "spin",
