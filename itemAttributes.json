@@ -19,6 +19,11 @@
 		"animation": "spin",
 		"damage": 2
 	},
+	"pen": {
+		"png": "pencil.png",
+		"animation": "spin",
+		"damage": 3
+	},
 	"bathtub": {
 		"png": "bowl.png",
 		"animation": "spin",
@@ -30,6 +35,11 @@
 		"damage": 2
 	},
 	"keyboard": {
+		"png": "keyboard.png",
+		"animation": "spin",
+		"damage": 2
+	},
+	"computer-keyboard": {
 		"png": "keyboard.png",
 		"animation": "spin",
 		"damage": 2
