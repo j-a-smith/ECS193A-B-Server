@@ -16,7 +16,7 @@ const dbSchema = `
 CREATE TABLE IF NOT EXISTS GameSessions (
 	id integer PRIMARY KEY NOT NULL,
 	game_state integer NOT NULL,
-	game_name text NOT NULL UNIQUE,
+	game_name text NOT NULL,
 	password text NOT NULL,
 	player1_username text NOT NULL,
 	player2_username text,
@@ -49,6 +49,11 @@ CREATE TABLE IF NOT EXISTS Inventories (
 );`
 
 
+// funciton used to get a random Int
+function getRandomInt(max) {
+	return Math.floor(Math.random() * Math.floor(max));
+}
+
 // Zombie stuff as global for now then move to data base
 class ZombieSeed {
 
@@ -59,7 +64,7 @@ class ZombieSeed {
 		this.positionX = this.distance * Math.cos(this.angle * Math.PI / 180);
 		this.positionY = -0.4;
 		this.positionZ = this.distance * Math.sin(this.angle * Math.PI / 180);
-		
+		this.health = getRandomInt(3) + 1;
 	}
 
 }
@@ -412,7 +417,6 @@ app.get('/kill-client/:gameId/:playerId', (req, res) => {
 		if (row) {
 
 			const playerSlots = [row.player1_username, row.player2_username, row.player3_username, row.player4_username]
-			console.log("Looking for Player Index:");
 			var indexOfPlayer = playerSlots.indexOf(playerID);
 			if(indexOfPlayer == -1) {//player not found
 				return;
@@ -430,8 +434,12 @@ app.get('/kill-client/:gameId/:playerId', (req, res) => {
 				if (indexFound == -1) {
 					//no more player quit game
 					console.log("No more players");
-
+					DB.run(`UPDATE GameSessions SET is_active=:0 WHERE id=:1`,0, gameID , (err) => {
+						if(err)
+							res.send({err});
+					});
 					//kill game
+					return;
 				}
 				playerSlots[0] = playerSlots[indexFound];
 				playerSlots[indexFound] = null;
@@ -447,17 +455,7 @@ app.get('/kill-client/:gameId/:playerId', (req, res) => {
 							}
 						}
 						if (indexNonNull == -1) {
-							console.log("Done Sorting");
-							break;
-						}
-						playerSlots[i] = playerSlots[indexNonNull];
-						playerSlots[indexNonNull] = null;
-					}
-				}
-
-				for(k = 0; k < playerSlots.length; k++) {
-					var playerCol = `player${k + 1}_username`
-					console.log("Player is being stored: ");
+							console.log("Player is being stored: ");
 					console.log(playerCol);
 
 					DB.run(`UPDATE GameSessions SET ${playerCol} = :0 WHERE ID = :1`, playerSlots[k], gameID, (err) => {
@@ -616,7 +614,7 @@ function isEmpty(obj) {
 app.get('/new-wave/:waveNum/:gameId', (req, res) => {
 
 	//Calculate number of zombies
-	const zombieCap = 35;
+	const zombieCap = 45;
 	const waveNum = parseInt(req.params.waveNum, 10);
 	const gameId = req.params.gameId;
 	var numberOfZombies = 15 + (waveNum-1) * 5;
