@@ -396,6 +396,132 @@ app.get('/kill-game/:gameId', (req, res) => {
 	});
 })
 
+app.get('/kill-client/:gameId/:playerId', (req, res) => {
+	const gameID = req.params.gameId;
+	const playerID = req.params.playerId;
+	var playersLeft = 0;
+	
+	
+	// in order to kill client get array of players and change player name to null
+	DB.get(`SELECT * FROM GameSessions WHERE id = :0`, gameID, (err,row) => {
+
+		if (err) {
+			res.send({err});
+			return;
+		}
+		if (row) {
+
+			const playerSlots = [row.player1_username, row.player2_username, row.player3_username, row.player4_username]
+			console.log("Looking for Player Index:");
+			var indexOfPlayer = playerSlots.indexOf(playerID);
+			if(indexOfPlayer == -1) {//player not found
+				return;
+			}
+
+			if(indexOfPlayer == 0) {
+				var k;
+				var indexFound = -1;	
+				for(k = 1; k < playerSlots.length; k++) {
+					if (playerSlots[k] != null) {
+						indexFound = k;
+						break;
+					}
+				}
+				if (indexFound == -1) {
+					//no more player quit game
+					console.log("No more players");
+
+					//kill game
+				}
+				playerSlots[0] = playerSlots[indexFound];
+				playerSlots[indexFound] = null;
+
+				//shift array to make sure there are no non-null values after null
+				for(k = 1; k < playerSlots.length; k++) {
+					if(playerSlots[k] == null) {
+						var indexNonNull = -1;
+						for(m = k + 1; m < playerSlots.length; m++) {
+							if(playerSlots[m] != null) {
+								indexNonNull = m;
+								break;
+							}
+						}
+						if (indexNonNull == -1) {
+							console.log("Done Sorting");
+							break;
+						}
+						playerSlots[i] = playerSlots[indexNonNull];
+						playerSlots[indexNonNull] = null;
+					}
+				}
+
+				for(k = 0; k < playerSlots.length; k++) {
+					var playerCol = `player${k + 1}_username`
+					console.log("Player is being stored: ");
+					console.log(playerCol);
+
+					DB.run(`UPDATE GameSessions SET ${playerCol} = :0 WHERE ID = :1`, playerSlots[k], gameID, (err) => {
+						if (err) {
+							console.log(err);
+						} 
+					});
+				}
+
+			} else {
+				console.log(indexOfPlayer);
+				// Player 1 exception
+				playerSlots[indexOfPlayer] = null;
+				var i;
+				var j;			
+				for(i = 0; i < playerSlots.length; i++) {
+					if(playerSlots[i] == null) {
+						var indexNonNull = -1;
+						for(j = i + 1; j < playerSlots.length; j++){
+						
+							if(playerSlots[j] != null){
+								indexNonNull = j;
+								break;
+							}
+						}	
+
+						if (indexNonNull == -1) {
+							console.log("Done Sorting");
+							break;
+						}
+	
+						playerSlots[i] = playerSlots[indexNonNull];
+						playerSlots[indexNonNull] = null;
+					}
+				}
+				console.log("sorted: ");
+				console.log(playerSlots);
+				//store in DB
+
+				for(i = 0; i < playerSlots.length; i++) {
+					var playerCol = `player${i + 1}_username`;
+					console.log("Player: ");
+					console.log(playerCol);
+					DB.run(`UPDATE GameSessions SET ${playerCol} = :0 WHERE ID = :1;`, playerSlots[i], gameID, (err) => {
+						if (err) {
+							console.log(err);
+						}
+					})
+				}
+			}
+		} else {
+			res.sen({err: "Game Session does not exist."})
+		}
+
+
+	});
+
+
+	// remove player from players Table
+
+
+})
+
+
 // ~~~~~~~~~~~~~~~~Zombie Stuff~~~~~~~~~~~~~~~~~
 
 
