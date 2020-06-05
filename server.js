@@ -456,6 +456,8 @@ app.get('/kill-client/:gameId/:playerId', (req, res) => {
 						}
 						if (indexNonNull == -1) {
 							console.log("Player is being stored: ");
+						}
+					}
 					console.log(playerCol);
 
 					DB.run(`UPDATE GameSessions SET ${playerCol} = :0 WHERE ID = :1`, playerSlots[k], gameID, (err) => {
