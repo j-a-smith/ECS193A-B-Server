@@ -108,5 +108,10 @@
 		"png": "toothbrush.png",
 		"animation": "spin",
 		"damage": 1
+	},
+	"tv-remote": {
+		"png": "tv-remote.png",
+		"animation": "spin",
+		"damage": 2
 	}
 }
